@@ -78,9 +78,10 @@ class PurchaseLineReturnPicking(models.TransientModel):
 
     @api.multi
     def _create_returns(self):
-        picking = self.env['stock.picking'].browse(self.env.context['active_id'])
 
         return_moves = self.product_return_moves.mapped('move_id')
+        return_moves_id = return_moves[0].ids
+        picking = self.env['stock.picking'].search([('move_lines','in',return_moves_id)])
         unreserve_moves = self.env['stock.move']
         for move in return_moves:
             to_check_moves = self.env['stock.move'] | move.move_dest_id
