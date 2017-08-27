@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <!--modification to Purchase Order form view-->
+    <record model="ir.ui.view" id="purchase_order_form_mod">
+      <field name="name">x_gfp.purchase.order.form.mod</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_form"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='date_order']" position="after">
+          <field name="show_backorder" invisible="1"/>
+          <field name="show_returned" invisible="1"/>
+          <field name="show_scrapped" invisible="1"/>
+        </xpath>
+        <!--<xpath expr="//field[@name='order_line']" position="attributes">
+          <attribute name="context">{'show_backorder': partner_ref,'show_returned': show_returned,'show_scrapped': show_scrapped}</attribute>
+        </xpath>-->
+        <xpath expr="//field[@name='order_line']//tree//field[@name='date_planned']" position="attributes">
+          <attribute name="widget">date</attribute>
+        </xpath>
+        <xpath expr="//field[@name='order_line']//tree//field[@name='taxes_id']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='order_line']//tree//field[@name='qty_invoiced']" position="after">
+          <field name="backorder_qty" />
+          <field name="returned_qty" />
+          <field name="scrapped_qty" />
+          <field name="accepted_qty" />
+        </xpath>
+        <xpath expr="//field[@name='order_line']//tree//field[@name='price_subtotal']" position="after">
+          <button  name="button_scrap" type="object" icon="fa-recycle"/>
+          <button name="%(sh_purchase_mod.action_purchase_line_return_picking)d"  type="action" icon="fa-chevron-circle-left"/>
+        </xpath>
+      </field>
+    </record>
+  </data>
+</odoo>
