@@ -56,10 +56,10 @@ class PurchaseLineFixPicking(models.TransientModel):
     def create_fix(self):
         for wizard in self:
             for line in wizard.product_fix_moves:
-                line.move_id.write({'product_uom_qty': line.quantity})
+                line.move_id.sudo().write({'product_uom_qty': line.quantity})
                 for quant in line.move_id.quant_ids:
-                    quant.write({'qty': line.quantity})
-                line.move_id.linked_move_operation_ids[0].operation_id.write({'qty_done':line.quantity})
+                    quant.sudo().write({'qty': line.quantity})
+                line.move_id.linked_move_operation_ids[0].operation_id.sudo().write({'qty_done':line.quantity})
                 #links = self.env['stock.move.operation.link'].search(['id','in',line.move_id.linked_move_operation_ids.ids])
                 #links[0].operation_id.write({'qty_done':line.quantity})
             moves = wizard.product_fix_moves.mapped(lambda r: r.move_id.id)
