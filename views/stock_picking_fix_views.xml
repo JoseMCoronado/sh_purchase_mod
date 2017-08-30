@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <act_window name="Line Fix Transfer" id="action_purchase_line_fix_picking"
+        res_model="purchase.line.fix.picking"
+        view_mode="form" target="new"/>
+
+    <record model="ir.ui.view" id="view_line_fix_picking_form">
+        <field name="name">Fix lines from Line</field>
+        <field name="model">purchase.line.fix.picking</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="product_fix_moves" nolabel="1">
+                        <tree editable="top" create="0">
+                            <field name="move_id" invisible="1"/>
+                            <field name="picking_id" readonly="1"/>
+                            <field name="product_id" readonly="1"/>
+                            <field name="quantity"/>
+                        </tree>
+                    </field>
+                </group>
+                <footer>
+                    <button name="create_fix" string="Fix" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-default" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

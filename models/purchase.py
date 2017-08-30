@@ -18,25 +18,41 @@ class PurchaseOrder(models.Model):
     compute='_show_scrapped', readonly=True,
     store=False)
 
-    @api.depends('order_line.backorder_qty')
+
     def _show_backorder(self):
         if any(self.order_line.mapped(lambda r: r.backorder_qty > 0)):
+            group_id = self.env.ref('sh_purchase_mod.group_show_backorder').id
+            group = self.env['res.groups'].search([('id','=',group_id)])
+            group.write({'users': [(4, self.env.user.id)]})
             self.show_backorder = True
         else:
+            group_id = self.env.ref('sh_purchase_mod.group_show_backorder').id
+            group = self.env['res.groups'].search([('id','=',group_id)])
+            group.write({'users': [(3, self.env.user.id)]})
             self.show_backorder = False
 
-    @api.depends('order_line.returned_qty')
     def _show_returned(self):
         if any(self.order_line.mapped(lambda r: r.returned_qty > 0)):
+            group_id = self.env.ref('sh_purchase_mod.group_show_returns').id
+            group = self.env['res.groups'].search([('id','=',group_id)])
+            group.write({'users': [(4, self.env.user.id)]})
             self.show_returned = True
         else:
+            group_id = self.env.ref('sh_purchase_mod.group_show_returns').id
+            group = self.env['res.groups'].search([('id','=',group_id)])
+            group.write({'users': [(3, self.env.user.id)]})
             self.show_returned = False
 
-    @api.depends('order_line.scrapped_qty')
     def _show_scrapped(self):
         if any(self.order_line.mapped(lambda r: r.scrapped_qty > 0)):
+            group_id = self.env.ref('sh_purchase_mod.group_show_scrapped').id
+            group = self.env['res.groups'].search([('id','=',group_id)])
+            group.write({'users': [(4, self.env.user.id)]})
             self.show_scrapped = True
         else:
+            group_id = self.env.ref('sh_purchase_mod.group_show_scrapped').id
+            group = self.env['res.groups'].search([('id','=',group_id)])
+            group.write({'users': [(3, self.env.user.id)]})
             self.show_scrapped = False
 
 

@@ -23,12 +23,13 @@
           <attribute name="invisible">1</attribute>
         </xpath>
         <xpath expr="//field[@name='order_line']//tree//field[@name='qty_invoiced']" position="after">
-          <field name="backorder_qty" />
-          <field name="returned_qty" />
-          <field name="scrapped_qty" />
+          <field name="backorder_qty" groups="sh_purchase_mod.group_show_backorder"/>
+          <field name="returned_qty" groups="sh_purchase_mod.group_show_returns"/>
+          <field name="scrapped_qty" groups="sh_purchase_mod.group_show_scrapped"/>
           <field name="accepted_qty" />
         </xpath>
         <xpath expr="//field[@name='order_line']//tree//field[@name='price_subtotal']" position="after">
+          <button  name="%(action_purchase_line_fix_picking)d" type="action" icon="fa-wrench"/>
           <button  name="button_scrap" type="object" icon="fa-recycle"/>
           <button name="%(sh_purchase_mod.action_purchase_line_return_picking)d"  type="action" icon="fa-chevron-circle-left"/>
         </xpath>
