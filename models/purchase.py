@@ -179,8 +179,9 @@ class MrpProduction(models.Model):
 
 class PackOperation(models.Model):
     _inherit = "stock.pack.operation"
+    
     @api.multi
-        def _compute_location_description(self):
-            for operation, operation_sudo in zip(self, self.sudo()):
-                operation.from_loc = '%s%s' % (operation_sudo.location_id.name, operation.product_id and operation_sudo.package_id.name or '')
-                operation.to_loc = '%s%s' % (operation_sudo.location_dest_id.name, operation_sudo.result_package_id.name or '')
+    def _compute_location_description(self):
+        for operation, operation_sudo in zip(self, self.sudo()):
+            operation.from_loc = '%s%s' % (operation_sudo.location_id.name, operation.product_id and operation_sudo.package_id.name or '')
+            operation.to_loc = '%s%s' % (operation_sudo.location_dest_id.name, operation_sudo.result_package_id.name or '')
