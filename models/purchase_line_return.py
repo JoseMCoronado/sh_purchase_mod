@@ -17,7 +17,7 @@ class PurchaseLineReturnPickingLine(models.TransientModel):
 
 
 class PurchaseLineReturnPicking(models.TransientModel):
-    _name = 'purchase.line.return.picking'
+    _name = "purchase.line.return.picking"
     _description = 'Purchase Line Return Picking'
 
     product_return_moves = fields.One2many('purchase.line.return.picking.line', 'wizard_id', 'Moves')

@@ -18,7 +18,7 @@ class PurchaseLineFixPickingLine(models.TransientModel):
 
 
 class PurchaseLineFixPicking(models.TransientModel):
-    _name = 'purchase.line.fix.picking'
+    _name = "purchase.line.fix.picking"
     _description = 'Purchase Line Fix Picking'
 
     product_fix_moves = fields.One2many('purchase.line.fix.picking.line', 'wizard_id', 'Moves')
