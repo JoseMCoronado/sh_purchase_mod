@@ -31,7 +31,7 @@
         <xpath expr="//field[@name='order_line']//tree//field[@name='price_subtotal']" position="after">
           <button  name="%(action_purchase_line_fix_picking)d" type="action" icon="fa-wrench"/>
           <button  name="button_scrap" type="object" icon="fa-recycle"/>
-          <button name="%(sh_purchase_mod.action_purchase_line_return_picking)d"  type="action" icon="fa-chevron-circle-left"/>
+          <button name="%(action_purchase_line_return_picking)d"  type="action" icon="fa-chevron-circle-left"/>
         </xpath>
       </field>
     </record>
