@@ -34,6 +34,8 @@ class PurchaseLineFixPicking(models.TransientModel):
         for move in purchase_line.move_ids:
             if move.state != 'done':
                 continue
+            if move.location_dest_id.usage != 'internal':
+                continue
             if move.scrapped:
                 continue
             quantity = sum(quant.qty for quant in Quant.search([
@@ -56,9 +58,17 @@ class PurchaseLineFixPicking(models.TransientModel):
     def create_fix(self):
         for wizard in self:
             for line in wizard.product_fix_moves:
+                difference = line.quantity - line.move_id.product_uom_qty
                 line.move_id.sudo().write({'product_uom_qty': line.quantity})
                 for quant in line.move_id.quant_ids:
-                    quant.sudo().write({'qty': line.quantity})
+                    if quant.location_id.usage == 'internal':
+                        new_quant = quant.qty + difference
+                        quant.sudo().write({'qty': new_quant})
+                        if new_quant < 0:
+                            #negative_moves = line.move_id.quant_ids.filtered(lambda quant: not quant.location_id != 'internal'))
+                            quant.sudo().write({'negative_move_id': 171,'negative_dest_location_id': 9})
+
+
                 line.move_id.linked_move_operation_ids[0].operation_id.sudo().write({'qty_done':line.quantity})
                 #links = self.env['stock.move.operation.link'].search(['id','in',line.move_id.linked_move_operation_ids.ids])
                 #links[0].operation_id.write({'qty_done':line.quantity})
