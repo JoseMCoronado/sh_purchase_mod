@@ -7,7 +7,7 @@
       <field name="groups_id" eval="[(6, 0, [])]"/>
       <field name="limit">80</field>
       <field name="name">Line Reverse Transfer</field>
-      <field name="res_model">purchase.line.fix.picking</field>
+      <field name="res_model">purchase.line.return.picking</field>
       <field name="target">new</field>
       <field name="type">ir.actions.act_window</field>
       <field name="view_id" eval="False"/>

@@ -8,30 +8,69 @@
       <field name="inherit_id" ref="purchase.purchase_order_form"/>
       <field name="priority">99</field>
       <field name="arch" type="xml">
-        <xpath expr="//field[@name='date_order']" position="after">
-          <field name="show_backorder" invisible="1"/>
-          <field name="show_returned" invisible="1"/>
-          <field name="show_scrapped" invisible="1"/>
+        <xpath expr="//button[@name='action_view_picking']" position="attributes">
+          <attribute name="name">action_view_avl_picking</attribute>
         </xpath>
-        <!--<xpath expr="//field[@name='order_line']" position="attributes">
-          <attribute name="context">{'show_backorder': partner_ref,'show_returned': show_returned,'show_scrapped': show_scrapped}</attribute>
-        </xpath>-->
         <xpath expr="//field[@name='order_line']//tree//field[@name='date_planned']" position="attributes">
           <attribute name="widget">date</attribute>
         </xpath>
         <xpath expr="//field[@name='order_line']//tree//field[@name='taxes_id']" position="attributes">
           <attribute name="invisible">1</attribute>
         </xpath>
-        <xpath expr="//field[@name='order_line']//tree//field[@name='qty_invoiced']" position="after">
-          <field name="backorder_qty" groups="sh_purchase_mod.group_show_backorder"/>
-          <field name="returned_qty" groups="sh_purchase_mod.group_show_returns"/>
-          <field name="scrapped_qty" groups="sh_purchase_mod.group_show_scrapped"/>
-          <field name="accepted_qty" />
-        </xpath>
         <xpath expr="//field[@name='order_line']//tree//field[@name='price_subtotal']" position="after">
-          <button  name="%(action_purchase_line_fix_picking)d" type="action" icon="fa-wrench"/>
           <button  name="button_scrap" type="object" icon="fa-recycle"/>
           <button name="%(action_purchase_line_return_picking)d"  type="action" icon="fa-chevron-circle-left"/>
+        </xpath>
+      </field>
+    </record>
+    <record model="ir.ui.view" id="purchase_stock_picking_tree">
+      <field name="name">x_gfp.purchase.stock.picking.tree</field>
+      <field name="model">stock.picking</field>
+      <field name="type">tree</field>
+      <field name="inherit_id" eval="False"/>
+      <field name="priority">16</field>
+      <field name="arch" type="xml">
+        <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancel'" decoration-danger="state not in ('cancel', 'done') and min_date &lt; current_date" string="Picking list">
+          <field name="transfer_type"/>
+          <field name="name" invisible="1"/>
+          <field name="location_dest_id"/>
+          <field name="partner_id"/>
+          <field name="date_done" string="Received Date"/>
+          <field name="date" invisible="1"/>
+          <field name="min_date"/>
+          <field name="origin"/>
+          <field name="group_id" invisible="1"/>
+          <field name="backorder_id"/>
+          <field name="state"/>
+          <field name="priority" invisible="1"/>
+          <field name="picking_type_id" invisible="1"/>
+        </tree>
+      </field>
+    </record>
+    <record model="ir.actions.act_window" id="action_purchase_picking_tree">
+            <field name="name">Transfers</field>
+            <field name="res_model">stock.picking</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,kanban,form,calendar</field>
+            <field name="domain"></field>
+            <field name="context">{
+                    'search_default_picking_type_id': [active_id],
+                    'default_picking_type_id': active_id,
+                    'contact_display': 'partner_address',
+            }
+            </field>
+            <field name="search_view_id" ref="stock.view_picking_internal_search"/>
+            <field name="view_id" ref="sh_purchase_mod.purchase_stock_picking_tree"/>
+    </record>
+    <record model="ir.ui.view" id="view_picking_form_mod">
+      <field name="name">x_gfp.picking.form.mod</field>
+      <field name="model">stock.picking</field>
+      <field name="inherit_id" ref="stock.view_picking_form"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='pack_operation_product_ids']//field[@name='qty_done']" position="after">
+          
         </xpath>
       </field>
     </record>

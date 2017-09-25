@@ -4,101 +4,54 @@ from odoo.tools.float_utils import float_compare
 from lxml import etree
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.addons import decimal_precision as dp
 
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
-    show_backorder = fields.Boolean(string='Show Backorders',
-    compute='_show_backorder', readonly=True,
-    store=False)
-    show_returned = fields.Boolean(string='Show Returns',
-    compute='_show_returned', readonly=True,
-    store=False)
-    show_scrapped = fields.Boolean(string='Show Scrapped',
-    compute='_show_scrapped', readonly=True,
-    store=False)
+    @api.multi
+    def action_view_picking(self):
 
+        action = self.env.ref('sh_purchase_mod.action_purchase_picking_tree')
+        result = action.read()[0]
 
-    def _show_backorder(self):
-        if any(self.order_line.mapped(lambda r: r.backorder_qty > 0)):
-            group_id = self.env.ref('sh_purchase_mod.group_show_backorder').id
-            group = self.env['res.groups'].search([('id','=',group_id)])
-            group.write({'users': [(4, self.env.user.id)]})
-            self.show_backorder = True
-        else:
-            group_id = self.env.ref('sh_purchase_mod.group_show_backorder').id
-            group = self.env['res.groups'].search([('id','=',group_id)])
-            group.write({'users': [(3, self.env.user.id)]})
-            self.show_backorder = False
+        result.pop('id', None)
+        result['context'] = {}
+        pick_ids = sum([order.picking_ids.ids for order in self], [])
 
-    def _show_returned(self):
-        if any(self.order_line.mapped(lambda r: r.returned_qty > 0)):
-            group_id = self.env.ref('sh_purchase_mod.group_show_returns').id
-            group = self.env['res.groups'].search([('id','=',group_id)])
-            group.write({'users': [(4, self.env.user.id)]})
-            self.show_returned = True
-        else:
-            group_id = self.env.ref('sh_purchase_mod.group_show_returns').id
-            group = self.env['res.groups'].search([('id','=',group_id)])
-            group.write({'users': [(3, self.env.user.id)]})
-            self.show_returned = False
+        if len(pick_ids) > 1:
+            result['domain'] = "[('id','in',[" + ','.join(map(str, pick_ids)) + "])]"
+        elif len(pick_ids) == 1:
+            res = self.env.ref('stock.view_picking_form', False)
+            result['views'] = [(res and res.id or False, 'form')]
+            result['res_id'] = pick_ids and pick_ids[0] or False
+        return result
 
-    def _show_scrapped(self):
-        if any(self.order_line.mapped(lambda r: r.scrapped_qty > 0)):
-            group_id = self.env.ref('sh_purchase_mod.group_show_scrapped').id
-            group = self.env['res.groups'].search([('id','=',group_id)])
-            group.write({'users': [(4, self.env.user.id)]})
-            self.show_scrapped = True
-        else:
-            group_id = self.env.ref('sh_purchase_mod.group_show_scrapped').id
-            group = self.env['res.groups'].search([('id','=',group_id)])
-            group.write({'users': [(3, self.env.user.id)]})
-            self.show_scrapped = False
+    @api.multi
+    def action_view_avl_picking(self):
+
+        action = self.env.ref('sh_purchase_mod.action_purchase_picking_tree')
+        result = action.read()[0]
+
+        result.pop('id', None)
+        result['context'] = {}
+
+        for order in self:
+            avl_pick_ids = order.picking_ids.filtered(lambda r: r.state in ['confirmed','partially_available','assigned']).ids
+
+        pick_ids = sum([order.picking_ids.ids for order in self], [])
+
+        if len(avl_pick_ids) < 1 and len(pick_ids) > 1:
+            result['domain'] = "[('id','in',[" + ','.join(map(str, pick_ids)) + "])]"
+        elif len(avl_pick_ids) > 0:
+            res = self.env.ref('stock.view_picking_form', False)
+            result['views'] = [(res and res.id or False, 'form')]
+            result['res_id'] = avl_pick_ids[0] or False
+        return result
 
 
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
-
-    backorder_qty = fields.Float(string='Backorder Qty',
-    compute='_get_backorder_qty', readonly=True,
-    store=False)
-    returned_qty = fields.Float(string='Returned Qty',
-    compute='_get_returned_qty', readonly=True,
-    store=False)
-    scrapped_qty = fields.Float(string='Scrapped Qty',
-    compute='_get_scrapped_qty', readonly=True,
-    store=False)
-    accepted_qty = fields.Float(string='Accepted Qty',
-    compute='_compute_accepted_qty', readonly=True,
-    store=False)
-
-    @api.model
-    def _get_backorder_qty(self):
-        for line in self:
-            backorder_amount = 0
-            backorder_amount += sum(line.move_ids.filtered(lambda r: r.backorder_id and r.is_done != True).mapped(lambda r: r.product_uom_qty))
-            line.backorder_qty = backorder_amount
-
-    @api.model
-    def _get_returned_qty(self):
-        for line in self:
-            returned_amount = 0
-            for m in line.move_ids:
-                returned_amount += sum(m.returned_move_ids.filtered(lambda r: r.is_done == True).mapped(lambda r: r.product_uom_qty))
-            line.returned_qty = returned_amount
-
-    @api.model
-    def _get_scrapped_qty(self):
-        for line in self:
-            scrapped_amount = 0
-            for p in line.order_id.picking_ids:
-                scrapped_amount += sum(p.move_lines.filtered(lambda r: r.scrapped == True).mapped(lambda r: r.product_uom_qty))
-            line.scrapped_qty = scrapped_amount
-
-    @api.model
-    def _compute_accepted_qty(self):
-        for line in self:
-            line.accepted_qty = line.qty_received - (line.backorder_qty + line.returned_qty + line.scrapped_qty)
 
     @api.onchange('product_id')
     def onchange_product_id(self):
@@ -129,43 +82,123 @@ class PurchaseOrderLine(models.Model):
                 'target': 'new',
             }
         else:
-            raise UserError(_("No moves avaialble to scrap."))
+            raise UserError(_("No moves available to scrap."))
 
-class AccountInvoice(models.Model):
-    _inherit = 'account.invoice'
+    
 
-    def _prepare_invoice_line_from_po_line(self, line):
-        if line.product_id.purchase_method == 'purchase':
-            qty = line.accepted_qty - line.qty_invoiced
+class Picking(models.Model):
+    _inherit = "stock.picking"
+
+    return_id = fields.Many2one(
+        'stock.picking', 'Return of',
+        copy=False, index=True,
+        states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    transfer_type = fields.Selection([
+        ('receipt', 'Receipt'),
+        ('return', 'Return'),
+        ('scrap', 'Scrap')],
+        readonly=True, compute='_compute_transfer_type')
+    pack_operation_product_ids = fields.One2many(
+        'stock.pack.operation', 'picking_id', 'Non pack',
+        domain=[('product_id', '!=', False)],
+        states={'done': [('readonly', False)], 'cancel': [('readonly', True)]})
+
+    @api.one
+    def _compute_transfer_type(self):
+        if self.return_id:
+            self.transfer_type = 'return'
+        elif self.location_dest_id.id == self.env.ref('stock.stock_location_scrapped'):
+            self.transfer_type = 'scrap'
         else:
-            qty = line.accepted_qty - line.qty_invoiced
-        if float_compare(qty, 0.0, precision_rounding=line.product_uom.rounding) <= 0:
-            qty = 0.0
-        taxes = line.taxes_id
-        invoice_line_tax_ids = line.order_id.fiscal_position_id.map_tax(taxes)
-        invoice_line = self.env['account.invoice.line']
-        data = {
-            'purchase_line_id': line.id,
-            'name': line.order_id.name+': '+line.name,
-            'origin': line.order_id.origin,
-            'uom_id': line.product_uom.id,
-            'product_id': line.product_id.id,
-            'account_id': invoice_line.with_context({'journal_id': self.journal_id.id, 'type': 'in_invoice'})._default_account(),
-            'price_unit': line.order_id.currency_id.compute(line.price_unit, self.currency_id, round=False),
-            'quantity': qty,
-            'discount': 0.0,
-            'account_analytic_id': line.account_analytic_id.id,
-            'analytic_tag_ids': line.analytic_tag_ids.ids,
-            'invoice_line_tax_ids': invoice_line_tax_ids.ids
-        }
-        account = invoice_line.get_invoice_line_account('in_invoice', line.product_id, line.order_id.fiscal_position_id, self.env.user.company_id)
-        if account:
-            data['account_id'] = account.id
-        return data
+            self.transfer_type = 'receipt'
+
+class ReturnPicking(models.TransientModel):
+    _inherit = "stock.return.picking"
+
+    @api.multi
+    def _create_returns(self):
+        res = super(ReturnPicking, self)._create_returns()
+
+        new_picking = self.env['stock.picking'].browse(res[0])
+        picking = self.env['stock.picking'].browse(self.env.context['active_id'])
+
+        new_picking.return_id = picking.id
+
+        return res
 
 class PackOperation(models.Model):
     _inherit = "stock.pack.operation"
 
+    fixed = fields.Boolean(string='Fixed', store=True, readonly=True, compute='do_fix')
+
+    def _get_origin_moves(self):
+        return self.picking_id and self.picking_id.move_lines.filtered(lambda x: x.product_id == self.product_id)
+
+    @api.depends('qty_done')
+    def do_fix(self):
+        for operation in self:
+            picking = operation.picking_id
+            if picking.state == 'done':
+                moves = operation._get_origin_moves()
+                quant_total = 0
+                for m in moves:
+                    quant_total += sum(m.quant_ids.filtered(lambda x: x.location_id.usage == 'internal').mapped(lambda r: r.qty))
+
+                if quant_total > operation.qty_done:
+                    new_move_vals = {
+                        'name': str(picking.name) + ' Move Fix',
+                        'origin': picking.name,
+                        'product_id': operation.product_id.id,
+                        'product_uom': operation.product_id.uom_id.id,
+                        'product_uom_qty': quant_total - operation.qty_done,
+                        'location_id': picking.location_dest_id.id,
+                        'location_dest_id': picking.location_id.id,
+                        'picking_id': picking.id
+                    }
+                else:
+                    new_move_vals = {
+                        'name': str(picking.name) + ' Move Fix',
+                        'origin': picking.name,
+                        'product_id': operation.product_id.id,
+                        'product_uom': operation.product_id.uom_id.id,
+                        'product_uom_qty': operation.qty_done - quant_total,
+                        'location_id': picking.location_id.id,
+                        'location_dest_id': picking.location_dest_id.id,
+                        'picking_id': picking.id
+                    }
+                move = self.env['stock.move'].create(new_move_vals)
+                quants = self.env['stock.quant'].quants_get_preferred_domain(
+                move.product_qty, move,
+                domain=[
+                    ('qty', '>', 0),
+                    #('lot_id', '=', self.lot_id.id),
+                    ('package_id', '=', operation.package_id.id)],
+                preferred_domain_list=operation._get_preferred_domain())
+
+                if any([not x[0] for x in quants]):
+                    quants_new = quants = self.env['stock.quant'].quants_get_preferred_domain(
+                    move.product_qty, move,
+                    domain=[
+                        ('qty', '>', 0),
+                        #('lot_id', '=', self.lot_id.id),
+                        ('package_id', '=', operation.package_id.id)],
+                    preferred_domain_list=[])
+                else:
+                    quants_new = quants
+                self.env['stock.quant'].quants_reserve(quants_new, move)
+                move.action_done()
+                moves.recalculate_move_state()
+                operation.fixed = True
+
+    def _get_preferred_domain(self):
+        if not self.picking_id:
+            return []
+        if self.picking_id.state == 'done':
+            preferred_domain = [('history_ids', 'in', self.picking_id.move_lines.filtered(lambda x: x.state == 'done').ids)]
+            preferred_domain2 = [('history_ids', 'not in', self.picking_id.move_lines.filtered(lambda x: x.state == 'done').ids)]
+            return [preferred_domain, preferred_domain2]
+
+    ##FIX FOR STAGING SERVER ERROR##
     @api.multi
     def _compute_location_description(self):
         for operation, operation_sudo in zip(self, self.sudo()):
