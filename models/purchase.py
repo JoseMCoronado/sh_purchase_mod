@@ -53,6 +53,35 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
+    @api.depends('order_id.state', 'move_ids.state','move_ids.returned_move_ids.state','move_ids.picking_id.move_lines.state','move_ids.returned_move_ids.picking_id.move_lines.state')
+    def _compute_qty_received(self):
+        for line in self:
+            if line.order_id.state not in ['purchase', 'done']:
+                line.qty_received = 0.0
+                continue
+            if line.product_id.type not in ['consu', 'product']:
+                line.qty_received = line.product_qty
+                continue
+            total = 0.0
+            total_neg = 0.0
+            pickings = self.env['stock.picking']
+            moves = line.move_ids | line.move_ids.mapped('returned_move_ids')
+            pickings |= moves.mapped('picking_id')
+            for picking in pickings:
+                for move in picking.move_lines:
+                    if move.state == 'done' and move.product_id == line.product_id and move.scrapped != True:
+                        if move.location_dest_id.usage == 'internal':
+                            if move.product_uom != line.product_uom:
+                                total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                            else:
+                                total += move.product_uom_qty
+                        else:
+                            if move.product_uom != line.product_uom:
+                                total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                            else:
+                                total_neg += move.product_uom_qty
+            line.qty_received = total - total_neg
+
     @api.onchange('product_id')
     def onchange_product_id(self):
         super(PurchaseOrderLine, self).onchange_product_id()
@@ -84,7 +113,6 @@ class PurchaseOrderLine(models.Model):
         else:
             raise UserError(_("No moves available to scrap."))
 
-    
 
 class Picking(models.Model):
     _inherit = "stock.picking"
@@ -107,7 +135,7 @@ class Picking(models.Model):
     def _compute_transfer_type(self):
         if self.return_id:
             self.transfer_type = 'return'
-        elif self.location_dest_id.id == self.env.ref('stock.stock_location_scrapped'):
+        elif self.location_dest_id.id == self.env.ref('stock.stock_location_scrapped').id:
             self.transfer_type = 'scrap'
         else:
             self.transfer_type = 'receipt'
@@ -131,18 +159,25 @@ class PackOperation(models.Model):
 
     fixed = fields.Boolean(string='Fixed', store=True, readonly=True, compute='do_fix')
 
-    def _get_origin_moves(self):
-        return self.picking_id and self.picking_id.move_lines.filtered(lambda x: x.product_id == self.product_id)
+    #def _get_origin_moves(self):
+    #    return self.picking_id and self.picking_id.move_lines.filtered(lambda x: x.product_id == self.product_id)
 
     @api.depends('qty_done')
     def do_fix(self):
         for operation in self:
             picking = operation.picking_id
             if picking.state == 'done':
-                moves = operation._get_origin_moves()
+                moves = operation.picking_id.move_lines.filtered(lambda x: x.product_id == operation.product_id)
                 quant_total = 0
-                for m in moves:
-                    quant_total += sum(m.quant_ids.filtered(lambda x: x.location_id.usage == 'internal').mapped(lambda r: r.qty))
+                total = 0
+                total_neg = 0
+                for move in moves:
+                    if move.state == 'done' and move.scrapped != True:
+                        if move.location_dest_id == picking.location_dest_id:
+                                total += move.product_uom_qty
+                        else:
+                                total_neg += move.product_uom_qty
+                quant_total = total - total_neg
 
                 if quant_total > operation.qty_done:
                     new_move_vals = {
@@ -166,8 +201,8 @@ class PackOperation(models.Model):
                         'location_dest_id': picking.location_dest_id.id,
                         'picking_id': picking.id
                     }
-                move = self.env['stock.move'].create(new_move_vals)
-                quants = self.env['stock.quant'].quants_get_preferred_domain(
+                move = operation.env['stock.move'].create(new_move_vals)
+                quants = operation.env['stock.quant'].quants_get_preferred_domain(
                 move.product_qty, move,
                 domain=[
                     ('qty', '>', 0),
@@ -176,7 +211,7 @@ class PackOperation(models.Model):
                 preferred_domain_list=operation._get_preferred_domain())
 
                 if any([not x[0] for x in quants]):
-                    quants_new = quants = self.env['stock.quant'].quants_get_preferred_domain(
+                    quants_new = quants = operation.env['stock.quant'].quants_get_preferred_domain(
                     move.product_qty, move,
                     domain=[
                         ('qty', '>', 0),
@@ -185,7 +220,7 @@ class PackOperation(models.Model):
                     preferred_domain_list=[])
                 else:
                     quants_new = quants
-                self.env['stock.quant'].quants_reserve(quants_new, move)
+                operation.env['stock.quant'].quants_reserve(quants_new, move)
                 move.action_done()
                 moves.recalculate_move_state()
                 operation.fixed = True

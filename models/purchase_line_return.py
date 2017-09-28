@@ -143,6 +143,9 @@ class PurchaseLineReturnPicking(models.TransientModel):
 
         new_picking.action_confirm()
         new_picking.action_assign()
+
+        new_picking.return_id = picking.id
+
         return new_picking.id, picking_type_id
 
     @api.multi
