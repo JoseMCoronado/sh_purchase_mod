@@ -123,7 +123,9 @@ class Picking(models.Model):
         states={'done': [('readonly', True)], 'cancel': [('readonly', True)]})
     transfer_type = fields.Selection([
         ('receipt', 'Receipt'),
+        ('delivery', 'Dispatch'),
         ('return', 'Return'),
+        ('internal', 'Internal'),
         ('scrap', 'Scrap')],
         readonly=True, compute='_compute_transfer_type')
     pack_operation_product_ids = fields.One2many(
@@ -137,8 +139,12 @@ class Picking(models.Model):
             self.transfer_type = 'return'
         elif self.location_dest_id.id == self.env.ref('stock.stock_location_scrapped').id:
             self.transfer_type = 'scrap'
-        else:
+        elif self.location_dest_id.usage == 'internal' and location_id.usage == 'internal':
+            self.transfer_type = 'internal'
+        elif self.location_dest_id.usage == 'internal' and location_id.usage != 'internal':
             self.transfer_type = 'receipt'
+        else:
+            self.transfer_type = 'delivery'
 
 class ReturnPicking(models.TransientModel):
     _inherit = "stock.return.picking"
