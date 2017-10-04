@@ -139,9 +139,9 @@ class Picking(models.Model):
             self.transfer_type = 'return'
         elif self.location_dest_id.id == self.env.ref('stock.stock_location_scrapped').id:
             self.transfer_type = 'scrap'
-        elif self.location_dest_id.usage == 'internal' and location_id.usage == 'internal':
+        elif self.location_dest_id.usage == 'internal' and self.location_id.usage == 'internal':
             self.transfer_type = 'internal'
-        elif self.location_dest_id.usage == 'internal' and location_id.usage != 'internal':
+        elif self.location_dest_id.usage == 'internal' and self.location_id.usage != 'internal':
             self.transfer_type = 'receipt'
         else:
             self.transfer_type = 'delivery'
