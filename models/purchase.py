@@ -124,6 +124,15 @@ class Picking(models.Model):
         'stock.pack.operation', 'picking_id', 'Non pack',
         domain=[('product_id', '!=', False)],
         states={'done': [('readonly', False)], 'cancel': [('readonly', True)]})
+    dest_address_id = fields.Many2one(
+        'res.partner', 'Dropship Address',
+        copy=False, index=True, store=False, readonly=True,compute='_compute_dsaddress')
+
+    @api.multi
+    def _compute_dsaddress(self):
+        for picking in self:
+            if picking.purchase_id and picking.purchase_id.dest_address_id:
+                picking.dest_address_id = picking.purchase_id.dest_address_id
 
     @api.one
     def _compute_transfer_type(self):

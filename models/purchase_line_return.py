@@ -14,6 +14,10 @@ class PurchaseLineReturnPickingLine(models.TransientModel):
     quantity = fields.Float("Quantity", digits=dp.get_precision('Product Unit of Measure'), required=True)
     wizard_id = fields.Many2one('purchase.line.return.picking', string="Wizard")
     move_id = fields.Many2one('stock.move', "Move")
+    date = fields.Datetime(string="Date Received", store=True)
+    picking_id = fields.Many2one('stock.picking', string="Transfer", store=True)
+
+
 
 
 class PurchaseLineReturnPicking(models.TransientModel):
@@ -36,11 +40,7 @@ class PurchaseLineReturnPicking(models.TransientModel):
         move_dest_exists = False
         product_return_moves = []
         purchase_line = self.env['purchase.order.line'].browse(self.env.context.get('active_id'))
-        #search_pickings = purchase_line.move_ids.filtered(lambda r: not r.backorder_id and r.scrapped != True and r.is_done == True).mapped('picking_id.id')
-        #picking = self.env['stock.picking'].search([('id','in',search_pickings)],limit=1)
-        #if picking:
-        #    if picking.state != 'done':
-        #        raise UserError(_("You may only return Done pickings"))
+
         for move in purchase_line.move_ids:
             if move.state != 'done':
                 continue
@@ -56,7 +56,7 @@ class PurchaseLineReturnPicking(models.TransientModel):
                 lambda quant: not quant.reservation_id or quant.reservation_id.origin_returned_move_id != move)
             )
             quantity = move.product_id.uom_id._compute_quantity(quantity, move.product_uom)
-            product_return_moves.append((0, 0, {'product_id': move.product_id.id, 'quantity': quantity, 'move_id': move.id}))
+            product_return_moves.append((0, 0, {'product_id': move.product_id.id, 'quantity': quantity, 'move_id': move.id, 'date': move.date, 'picking_id':move.picking_id.id}))
             picking = move.picking_id
 
         if not product_return_moves:
