@@ -82,14 +82,6 @@ class PurchaseOrderLine(models.Model):
                                 total_neg += move.product_uom_qty
             line.qty_received = total - total_neg
 
-    @api.onchange('product_id')
-    def onchange_product_id(self):
-        super(PurchaseOrderLine, self).onchange_product_id()
-        for line in self:
-            line.name = line.product_id.name
-            if line.product_id.description_purchase:
-                line.name += '\n' + line.product_id.description_purchase
-
     @api.multi
     def button_scrap(self):
         self.ensure_one()
