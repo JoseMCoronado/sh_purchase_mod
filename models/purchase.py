@@ -71,14 +71,14 @@ class PurchaseOrderLine(models.Model):
                 for move in picking.move_lines:
                     if move.state == 'done' and move.product_id == line.product_id and move.scrapped != True:
                         if move.location_dest_id.usage == 'internal':
-                            #if move.product_uom != line.product_uom:
-                            #    total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                            #else:
+                            if move.product_uom != line.product_uom:
+                                total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                            else:
                                 total += move.product_uom_qty
                         else:
-                            #if move.product_uom != line.product_uom:
-                            #    total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                            #else:
+                            if move.product_uom != line.product_uom:
+                                total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                            else:
                                 total_neg += move.product_uom_qty
             line.qty_received = total - total_neg
 
