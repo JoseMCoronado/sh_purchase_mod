@@ -71,14 +71,14 @@ class PurchaseOrderLine(models.Model):
                 for move in picking.move_lines:
                     if move.state == 'done' and move.product_id == line.product_id and move.scrapped != True:
                         if move.location_dest_id.usage == 'internal':
-                            if move.product_uom != line.product_uom:
-                                total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                            else:
+                            #if move.product_uom != line.product_uom:
+                            #    total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                            #else:
                                 total += move.product_uom_qty
                         else:
-                            if move.product_uom != line.product_uom:
-                                total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                            else:
+                            #if move.product_uom != line.product_uom:
+                            #    total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                            #else:
                                 total_neg += move.product_uom_qty
             line.qty_received = total - total_neg
 
@@ -138,7 +138,7 @@ class Picking(models.Model):
         if self.return_id:
             self.transfer_type = 'return'
         elif self.location_dest_id.id == self.env.ref('stock.stock_location_scrapped').id:
-            self.transfer_type = 'scrap'
+            self.transfer_type = 'scwrap'
         elif self.location_dest_id.usage == 'internal' and self.location_id.usage == 'internal':
             self.transfer_type = 'internal'
         elif self.location_dest_id.usage == 'internal' and self.location_id.usage != 'internal':
