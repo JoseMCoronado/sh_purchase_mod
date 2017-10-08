@@ -164,12 +164,8 @@ class ReturnPicking(models.TransientModel):
 class PackOperation(models.Model):
     _inherit = "stock.pack.operation"
 
-    fixed = fields.Boolean(string='Fixed', store=True, readonly=True, compute='do_fix')
-
-    #def _get_origin_moves(self):
-    #    return self.picking_id and self.picking_id.move_lines.filtered(lambda x: x.product_id == self.product_id)
-
-    @api.depends('qty_done')
+    @api.multi
+    @api.constrains('qty_done')
     def do_fix(self):
         for operation in self:
             picking = operation.picking_id
@@ -230,7 +226,6 @@ class PackOperation(models.Model):
                 operation.env['stock.quant'].quants_reserve(quants_new, move)
                 move.action_done()
                 moves.recalculate_move_state()
-                operation.fixed = True
 
     def _get_preferred_domain(self):
         if not self.picking_id:
@@ -239,10 +234,3 @@ class PackOperation(models.Model):
             preferred_domain = [('history_ids', 'in', self.picking_id.move_lines.filtered(lambda x: x.state == 'done').ids)]
             preferred_domain2 = [('history_ids', 'not in', self.picking_id.move_lines.filtered(lambda x: x.state == 'done').ids)]
             return [preferred_domain, preferred_domain2]
-
-    ##FIX FOR STAGING SERVER ERROR##
-    @api.multi
-    def _compute_location_description(self):
-        for operation, operation_sudo in zip(self, self.sudo()):
-            operation.from_loc = '%s%s' % (operation_sudo.location_id.name, operation.product_id and operation_sudo.package_id.name or '')
-            operation.to_loc = '%s%s' % (operation_sudo.location_dest_id.name, operation_sudo.result_package_id.name or '')
