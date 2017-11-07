@@ -46,6 +46,8 @@ class PurchaseLineReturnPicking(models.TransientModel):
                 continue
             if move.scrapped:
                 continue
+            if move.location_dest_id.usage != 'internal':
+                continue
             if move.move_dest_id:
                 move_dest_exists = True
             # Sum the quants in that location that can be returned (they should have been moved by the moves that were included in the returned picking)

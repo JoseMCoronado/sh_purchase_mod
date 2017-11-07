@@ -64,22 +64,19 @@ class PurchaseOrderLine(models.Model):
                 continue
             total = 0.0
             total_neg = 0.0
-            pickings = self.env['stock.picking']
             moves = line.move_ids | line.move_ids.mapped('returned_move_ids')
-            pickings |= moves.mapped('picking_id')
-            for picking in pickings:
-                for move in picking.move_lines:
-                    if move.state == 'done' and move.product_id == line.product_id and move.scrapped != True:
-                        if move.location_dest_id.usage == 'internal':
-                            if move.product_uom != line.product_uom:
-                                total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                            else:
-                                total += move.product_uom_qty
+            for move in moves:
+                if move.state == 'done' and move.product_id == line.product_id and move.scrapped != True:
+                    if move.location_dest_id.usage == 'internal':
+                        if move.product_uom != line.product_uom:
+                            total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
                         else:
-                            if move.product_uom != line.product_uom:
-                                total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                            else:
-                                total_neg += move.product_uom_qty
+                            total += move.product_uom_qty
+                    else:
+                        if move.product_uom != line.product_uom:
+                            total_neg += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                        else:
+                            total_neg += move.product_uom_qty
             line.qty_received = total - total_neg
 
     @api.multi
@@ -174,6 +171,8 @@ class PackOperation(models.Model):
                 quant_total = 0
                 total = 0
                 total_neg = 0
+                if moves:
+                    purchase_line = moves[0].purchase_line_id
                 for move in moves:
                     if move.state == 'done' and move.scrapped != True:
                         if move.location_dest_id == picking.location_dest_id:
@@ -191,7 +190,8 @@ class PackOperation(models.Model):
                         'product_uom_qty': quant_total - operation.qty_done,
                         'location_id': picking.location_dest_id.id,
                         'location_dest_id': picking.location_id.id,
-                        'picking_id': picking.id
+                        'picking_id': picking.id,
+                        'purchase_line_id': purchase_line.id
                     }
                 else:
                     new_move_vals = {
@@ -202,7 +202,8 @@ class PackOperation(models.Model):
                         'product_uom_qty': operation.qty_done - quant_total,
                         'location_id': picking.location_id.id,
                         'location_dest_id': picking.location_dest_id.id,
-                        'picking_id': picking.id
+                        'picking_id': picking.id,
+                        'purchase_line_id': purchase_line.id
                     }
                 move = operation.env['stock.move'].create(new_move_vals)
                 quants = operation.env['stock.quant'].quants_get_preferred_domain(
