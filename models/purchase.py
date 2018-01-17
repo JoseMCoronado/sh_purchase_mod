@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from odoo.tools.float_utils import float_compare
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
+from odoo.tools.float_utils import float_is_zero, float_compare
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from lxml import etree
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
-from odoo.addons import decimal_precision as dp
+from odoo import api, fields, models, SUPERUSER_ID, _
+from odoo.exceptions import UserError, AccessError
+from odoo.tools.misc import formatLang
+from odoo.addons.base.res.res_partner import WARNING_MESSAGE, WARNING_HELP
+import odoo.addons.decimal_precision as dp
 
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
@@ -115,6 +121,63 @@ class PurchaseOrderLine(models.Model):
                 proc.purchase_line_id = False
             line.env['procurement.order'].browse(proc_ids).filtered(lambda r: r.state != 'cancel').cancel()
         return super(PurchaseOrderLine, self).unlink()
+
+class ProcurementOrder(models.Model):
+    _inherit = 'procurement.order'
+
+    @api.multi
+    def _prepare_purchase_order_line(self, po, supplier):
+        self.ensure_one()
+
+        procurement_uom_po_qty = self.product_uom._compute_quantity(self.product_qty, self.product_id.uom_po_id)
+        seller = self.product_id._select_seller(
+            partner_id=supplier.name,
+            quantity=procurement_uom_po_qty,
+            date=po.date_order and po.date_order[:10],
+            uom_id=self.product_id.uom_po_id)
+
+        taxes = self.product_id.supplier_taxes_id
+        fpos = po.fiscal_position_id
+        taxes_id = fpos.map_tax(taxes) if fpos else taxes
+        if taxes_id:
+            taxes_id = taxes_id.filtered(lambda x: x.company_id.id == self.company_id.id)
+
+        price_unit = self.env['account.tax']._fix_tax_included_price_company(seller.price, self.product_id.supplier_taxes_id, taxes_id, self.company_id) if seller else 0.0
+        if price_unit and seller and po.currency_id and seller.currency_id != po.currency_id:
+            price_unit = seller.currency_id.compute(price_unit, po.currency_id)
+
+        product_lang = self.product_id.with_context({
+            'lang': supplier.name.lang,
+            'partner_id': supplier.name.id,
+        })
+        ##NAME CHANGE##
+        if supplier and (supplier.product_name or supplier.product_code):
+            name = ""
+            if supplier.product_code:
+                name = "[" + supplier.product_code + "] "
+            if supplier.product_name:
+                name += supplier.product_name
+            else:
+                name += self.product_id.name
+        else:
+            name = self.product_id.name
+
+        if product_lang.description_purchase:
+            name += '\n' + product_lang.description_purchase
+
+        date_planned = self.env['purchase.order.line']._get_date_planned(seller, po=po).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+
+        return {
+            'name': name,
+            'product_qty': procurement_uom_po_qty,
+            'product_id': self.product_id.id,
+            'product_uom': self.product_id.uom_po_id.id,
+            'price_unit': price_unit,
+            'date_planned': date_planned,
+            'taxes_id': [(6, 0, taxes_id.ids)],
+            'procurement_ids': [(4, self.id)],
+            'order_id': po.id,
+        }
 
 class Picking(models.Model):
     _inherit = "stock.picking"
