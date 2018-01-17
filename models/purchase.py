@@ -2,7 +2,7 @@
 
 from odoo.tools.float_utils import float_compare
 from lxml import etree
-from odoo import api, fields, models
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.addons import decimal_precision as dp
 
@@ -65,6 +65,7 @@ class PurchaseOrderLine(models.Model):
             total = 0.0
             total_neg = 0.0
             moves = line.move_ids | line.move_ids.mapped('returned_move_ids')
+            ##TODO FIX THE ISSUE WITH RETURNED MOVE IDS
             for move in moves:
                 if move.state == 'done' and move.product_id == line.product_id and move.scrapped != True:
                     if move.location_dest_id.usage == 'internal':
@@ -102,6 +103,18 @@ class PurchaseOrderLine(models.Model):
         else:
             raise UserError(_("No moves available to scrap."))
 
+    @api.multi
+    def unlink(self):
+        for line in self:
+            if line.order_id.state in ['purchase', 'done']:
+                raise UserError(_('Cannot delete a purchase order line which is in state \'%s\'.') %(line.state,))
+            proc_ids = []
+            for proc in line.procurement_ids:
+                proc.message_post(body=_('Purchase order line deleted.'))
+                proc_ids.append(proc.id)
+                proc.purchase_line_id = False
+            line.env['procurement.order'].browse(proc_ids).filtered(lambda r: r.state != 'cancel').cancel()
+        return super(PurchaseOrderLine, self).unlink()
 
 class Picking(models.Model):
     _inherit = "stock.picking"
