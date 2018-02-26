@@ -21,6 +21,9 @@
           <button name="button_scrap" type="object" icon="fa-recycle"/>
           <button name="%(action_purchase_line_return_picking)d"  type="action" icon="fa-chevron-circle-left"/>
         </xpath>
+        <xpath expr="//button[@name='button_done']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
       </field>
     </record>
     <record model="ir.ui.view" id="purchase_stock_picking_tree">
@@ -71,6 +74,39 @@
       <field name="arch" type="xml">
         <xpath expr="//field[@name='backorder_id']" position="after">
           <field name="dest_address_id" attrs="{'invisible': [('dest_address_id','=',False)]}"/>
+        </xpath>
+      </field>
+    </record>
+    <record model="ir.ui.view" id="invoice_supplier_form_mod">
+      <field name="name">x_gfp.account.invoice.supplier.form.mod</field>
+      <field name="model">account.invoice</field>
+      <field name="inherit_id" ref="account.invoice_supplier_form"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='invoice_line_ids']//tree//field[@name='quantity']" position="after">
+          <field name="qty_received"/>
+        </xpath>
+      </field>
+    </record>
+    <record model="ir.ui.view" id="purchase_order_tree_mod">
+      <field name="name">x_gfp.purchase.order.form.mod</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_tree"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='state']" position="before">
+          <field name="stage"/>
+        </xpath>
+      </field>
+    </record>
+    <record model="ir.ui.view" id="view_make_procurment_wizard_mod">
+      <field name="name">x_gfp.procurement.request.form.mod</field>
+      <field name="model">make.procurement</field>
+      <field name="inherit_id" ref="stock.view_make_procurment_wizard"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='product_tmpl_id']" position="after">
+          <field name="suppliers" required="1" options="{'no_create': True, 'no_open': True}"/>
         </xpath>
       </field>
     </record>
