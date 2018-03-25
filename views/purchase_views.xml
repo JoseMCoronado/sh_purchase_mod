@@ -110,5 +110,37 @@
         </xpath>
       </field>
     </record>
+    <record model="ir.ui.view" id="view_product_supplier_inherit_mod">
+      <field name="name">x_gfp.product.template.supplier.form.inherit.mod</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="purchase.view_product_supplier_inherit"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='seller_ids']" position="replace">
+          <field name="seller_ids" context="{'default_product_tmpl_id': context.get('product_tmpl_id', active_id)}">
+            <tree>
+              <field name="name"/>
+              <field name="product_code"/>
+              <field name="min_qty"/>
+              <field name="price"/>
+              <field name="date_start"/>
+              <field name="date_end"/>
+              <button name="duplicate" type="object" string="Duplicate"/>
+            </tree>
+          </field>
+        </xpath>
+      </field>
+    </record>
+    <record model="ir.ui.view" id="product_template_search_view_mod">
+      <field name="name">x_gfp.product.template.search.mod</field>
+      <field name="model">product.template</field>
+      <field name="inherit_id" ref="product.product_template_search_view"/>
+      <field name="priority">99</field>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='name']" position="replace">
+          <field name="name" string="Product" filter_domain="['|','|','|',('default_code','ilike',self),('supplier_codes','ilike',self),('name','ilike',self),('barcode','ilike',self)]"/>
+        </xpath>
+      </field>
+    </record>
   </data>
 </odoo>

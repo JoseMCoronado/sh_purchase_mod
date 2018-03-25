@@ -65,6 +65,60 @@ class PurchaseOrder(models.Model):
             result['res_id'] = avl_pick_ids[0] or False
         return result
 
+class ProductSupplierInfo(models.Model):
+    _inherit = 'product.supplierinfo'
+
+    @api.multi
+    def duplicate(self):
+        for record in self:
+            newinfos = {
+                'name': record.name.id,
+                'product_name': record.product_name,
+                'product_code': record.product_code,
+                'delay': record.delay,
+                'min_qty': record.min_qty,
+                'date_start': record.date_start,
+                'date_end': record.date_end,
+                'price': record.price,
+                'currency_id': record.currency_id.id,
+                'product_id': record.product_id.id,
+                'product_tmpl_id': record.product_tmpl_id.id,
+            }
+            record.env['product.supplierinfo'].create(newinfos)
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
+
+    @api.multi
+    def name_get(self):
+
+        def _name_get(d):
+            name = d.get('name', '')
+            code = d.get('product_code', '')
+            minqty = d.get('min_qty', '')
+            price = d.get('price', '')
+            if code:
+                name = '[%s] %s -- Min: %s (%s)' % (code,name,minqty,price)
+            else:
+                name = '%s -- Min: %s (%s)' % (code,name,minqty,price)
+            return (d['id'], name)
+
+        self.check_access_rights("read")
+        self.check_access_rule("read")
+
+        result = []
+        for info in self.sudo():
+            mydict = {
+                      'id': info.id,
+                      'name': info.name.name,
+                      'product_code': info.product_code,
+                      'min_qty': info.min_qty,
+                      'price': '$' + str(round(info.price,2)),
+                      }
+            result.append(_name_get(mydict))
+        return result
+
 class MakeProcurement(models.TransientModel):
     _inherit = 'make.procurement'
 
