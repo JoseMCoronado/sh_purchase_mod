@@ -153,11 +153,10 @@
           <field name="arch" type="xml">
             <form string="Transfer">
 
-                <header>
+                <header invisible="1">
                     <button invisible="1" name="action_confirm" states="draft" string="Mark as Todo" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button invisible="1" name="action_assign" states="confirmed,waiting" string="Reserve" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button invisible="1" name="force_assign" states="confirmed,waiting,partially_available" string="Force Availability" type="object" groups="stock.group_stock_manager"/>
-                    <button name="do_new_transfer" barcode_trigger="validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
                     <button invisible="1" name="do_print_picking" barcode_trigger="print" string="Print" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}"/>
                     <button invisible="1" name="300" string="Print" states="done" type="action" groups="base.group_user"/>
                     <button invisible="1" name="308" string="Return" states="done" type="action" groups="base.group_user"/>
@@ -194,6 +193,7 @@
                             </div>
                         </group>
                     </group>
+                    <button name="do_new_transfer" barcode_trigger="validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
                     <notebook>
                         <page string="Operations" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting'))]}">
                             <button name="do_prepare_partial" type="object" string="Recompute" attrs="{'invisible': [('recompute_pack_op','=', False)]}"/>
