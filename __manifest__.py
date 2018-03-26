@@ -15,8 +15,10 @@ RESPONSIBILITY FOR ANY BEHAVIOR ONCE INSTALLED.
     'depends':['base','account_accountant','purchase','stock'],
     'data':[
             'views/stock_picking_return_views.xml',
-            'views/purchase_views.xml',
-
+            'views/ir_ui_views.xml',
+            'views/ir_actions_act_window.xml',
+            'views/ir_actions_server.xml',
+            'views/ir_ui_menu.xml',
             ],
     'installable': True,
 }

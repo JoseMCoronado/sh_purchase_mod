@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <record model="ir.ui.menu" id="menu_stock_deduct_tool">
+      <field name="parent_id" eval="False"/>
+      <field name="name">Stock Deduct</field>
+      <field name="web_icon">maintenance,static/description/icon.png</field>
+      <field name="sequence">10</field>
+      <field name="action" ref="actions_open_stock_deduct_tool"/>
+    </record>
+  </data>
+</odoo>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <record model="ir.actions.server" id="actions_open_stock_deduct_tool">
+      <field name="name">Open Stock Deduct Tool</field>
+      <field name="model_id" ref="stock.model_stock_picking"/>
+      <field name="state">code</field>
+      <field name="code"><![CDATA[
+vals = {
+        'picking_type_id':5,
+        'location_id':15,
+        'location_dest_id':5,
+        }
+newpicking = env['stock.picking'].create(vals)
+newpicking.action_confirm()
+action_data = env.ref('sh_purchase_mod.action_window_stock_deduct_tool').read()[0]
+action_data.update({'res_id':newpicking.id})
+action = action_data
+      ]]></field>
+    </record>
+  </data>
+</odoo>
