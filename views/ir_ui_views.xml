@@ -86,6 +86,9 @@
         <xpath expr="//field[@name='invoice_line_ids']//tree//field[@name='quantity']" position="after">
           <field name="qty_received"/>
         </xpath>
+        <xpath expr="//field[@name='invoice_line_ids']//tree//field[@name='price_unit']" position="after">
+          <button name="open_adjustment_wizard" type="object" icon="fa-usd text-info"/>
+        </xpath>
       </field>
     </record>
     <record model="ir.ui.view" id="purchase_order_tree_mod">
@@ -294,5 +297,28 @@
                 </form>
           </field>
         </record>
+        <record model="ir.ui.view" id="view_adjust_price_wizard">
+          <field name="name">x_gfp.adjust.unit.price.wizard.form</field>
+          <field name="model">adjust.unit.price.wizard</field>
+          <field name="inherit_id" eval="False"/>
+          <field name="priority">16</field>
+          <field name="groups_id" eval="[(6, 0, [])]"/>
+          <field name="type">form</field>
+          <field name="mode">primary</field>
+          <field name="arch" type="xml">
+            <form>
+                <group>
+                  <group>
+                    <field name="invoice_line_id" invisible="1"/>
+                    <field name="amount"/>
+                  </group>
+                </group>
+                <footer>
+                    <button string="Update" type="object" name="adjust_line" class="oe_highlight"/> or
+                    <button string="Cancel" special="cancel" class="oe_link"/>
+                </footer>
+            </form>
+          </field>
+      </record>
   </data>
 </odoo>
