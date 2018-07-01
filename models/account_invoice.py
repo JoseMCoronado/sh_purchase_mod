@@ -35,3 +35,4 @@ class AdjustUnitPriceWizard(models.TransientModel):
         for record in self:
             if record.invoice_line_id.quantity >0:
                 record.invoice_line_id.price_unit = (record.amount / record.invoice_line_id.quantity)
+                record.invoice_line_id.quantity = record.invoice_line_id.quantity
