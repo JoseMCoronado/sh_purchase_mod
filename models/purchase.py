@@ -18,6 +18,14 @@ class PurchaseOrder(models.Model):
     stage = fields.Char('Recv. Status',compute='_compute_stage',readonly=True,store=False)
 
     @api.multi
+    def button_approve(self, force=False):
+        res = super(PurchaseOrder, self).button_approve(force=False)
+        for record in self:
+            for line in record.order_line:
+                line.product_id.write({'purchase_cost':line.price_unit})
+        return res
+
+    @api.multi
     def _compute_stage(self):
         for record in self:
             if any(l.qty_received < l.product_qty for l in record.order_line):

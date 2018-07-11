@@ -12,7 +12,7 @@ THIS MODULE IS PROVIDED AS IS - INSTALLATION AT USERS' OWN RISK - AUTHOR OF MODU
 RESPONSIBILITY FOR ANY BEHAVIOR ONCE INSTALLED.
         """,
 
-    'depends':['base','account_accountant','purchase','stock'],
+    'depends':['base','account_accountant','purchase','stock','mrp'],
     'data':[
             'views/stock_picking_return_views.xml',
             'views/ir_ui_views.xml',

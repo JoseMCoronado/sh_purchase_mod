@@ -119,13 +119,24 @@
       <field name="inherit_id" ref="product.product_template_form_view"/>
       <field name="priority">99</field>
       <field name="arch" type="xml">
+        <xpath expr="//label[@for='standard_price']" position="attributes">
+          <attribute name="string">Total Cost</attribute>
+        </xpath>
+        <xpath expr="//field[@name='standard_price']" position="attributes">
+          <attribute name="readonly">1</attribute>
+        </xpath>
         <xpath expr="//field[@name='list_price']" position="after">
-          <label for="total_cost" groups="base.group_user"/>
-          <div groups="base.group_user">
-              <field name="total_cost" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
-          </div>
+          <field name="cost_type" widget="radio"/>
         </xpath>
         <xpath expr="//field[@name='standard_price']/.." position="after">
+          <label for="bom_cost" groups="base.group_user"/>
+          <div groups="base.group_user">
+              <field name="bom_cost" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+          </div>
+          <label for="purchase_cost" groups="base.group_user"/>
+          <div groups="base.group_user">
+              <field name="purchase_cost" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+          </div>
           <label for="shipping_cost" groups="base.group_user"/>
           <div groups="base.group_user">
               <field name="shipping_cost" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
