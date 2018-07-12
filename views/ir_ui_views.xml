@@ -131,15 +131,15 @@
         <xpath expr="//field[@name='standard_price']/.." position="after">
           <label for="bom_cost" groups="base.group_user"/>
           <div groups="base.group_user">
-              <field name="bom_cost" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+              <field name="bom_cost" digits="(14, 6)" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
           </div>
           <label for="purchase_cost" groups="base.group_user"/>
           <div groups="base.group_user">
-              <field name="purchase_cost" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+              <field name="purchase_cost" digits="(14, 6)" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
           </div>
           <label for="shipping_cost" groups="base.group_user"/>
           <div groups="base.group_user">
-              <field name="shipping_cost" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+              <field name="shipping_cost" digits="(14, 6)" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
           </div>
         </xpath>
       </field>
