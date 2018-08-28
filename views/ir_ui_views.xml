@@ -102,6 +102,17 @@
         </xpath>
       </field>
     </record>
+    <record model="ir.ui.view" id="product_category_form_view">
+        <field name="name">x_gfp.product_category_form_view.mod</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+          <xpath expr="//field[@name='type']" position="after">
+            <field name="duty_multiplier"/>
+          </xpath>
+        </field>
+      </record>
     <record model="ir.ui.view" id="view_make_procurment_wizard_mod">
       <field name="name">x_gfp.procurement.request.form.mod</field>
       <field name="model">make.procurement</field>
@@ -135,7 +146,11 @@
           </div>
           <label for="purchase_cost" groups="base.group_user" attrs="{'invisible':[('cost_type','=','manufacture')]}"/>
           <div groups="base.group_user" attrs="{'invisible':[('cost_type','=','manufacture')]}">
-              <field name="purchase_cost" digits="(14, 6)" readonly="1" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+              <field name="purchase_cost" digits="(14, 6)" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
+          </div>
+          <label for="duty_cost" groups="base.group_user" attrs="{'invisible':[('cost_type','=','manufacture')]}"/>
+          <div groups="base.group_user" attrs="{'invisible':[('cost_type','=','manufacture')]}">
+              <field name="duty_cost" readonly="1" digits="(14, 6)" widget="monetary" options="{'currency_field': 'currency_id'}" class="oe_inline"/>
           </div>
           <label for="shipping_cost" groups="base.group_user" attrs="{'invisible':[('cost_type','=','manufacture')]}"/>
           <div groups="base.group_user" attrs="{'invisible':[('cost_type','=','manufacture')]}">
