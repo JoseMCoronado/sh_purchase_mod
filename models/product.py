@@ -8,6 +8,13 @@ class ProductCategory(models.Model):
 
     duty_multiplier = fields.Float(string="Tariff and Duty Multiplier")
 
+    @api.constrains('duty_multiplier')
+    def update_duty_price(self):
+        for record in self:
+            products = record.env['product.template'].search([('categ_id','=',record.id)])
+            if products:
+                products.update_duty_price()
+
 class ProductTemplate(models.Model):
     _inherit = "product.template"
 
@@ -23,7 +30,7 @@ class ProductTemplate(models.Model):
     duty_cost = fields.Float(string="Tariff & Duty Cost")
     bom_cost = fields.Float(string="Subtotal from BoM",compute="_update_bom_subtotal",store=True)
 
-    @api.constrains('purchase_cost')
+    @api.constrains('purchase_cost','categ_id')
     def update_duty_price(self):
         for record in self:
             record.duty_cost = record.categ_id.duty_multiplier * record.purchase_cost
